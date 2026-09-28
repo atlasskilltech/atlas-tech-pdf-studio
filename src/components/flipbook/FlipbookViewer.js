@@ -63,11 +63,21 @@ const VIEWER_QUALITY = 0.92;
 /** A4 width at CSS resolution: the size the sheets actually lay out at. */
 const NATURAL_W = PAGE_W_MM * (96 / 25.4);
 
+/**
+ * How large a page may be drawn. The artwork is rendered at VIEWER_SCALE,
+ * so this is the point past which it would be upscaled and go soft; below
+ * it the book is free to use whatever room a tall window or a tall iframe
+ * gives it, rather than stopping at the sheet's nominal size and leaving
+ * the space empty.
+ */
+const MAX_PAGE_W = NATURAL_W * VIEWER_SCALE;
+
 export default function FlipbookViewer({ entry }) {
   const sourceRef = useRef(null); // off-screen React sheets
   const stageRef = useRef(null); // the measured area
   const hostRef = useRef(null); // stable; React owns this one
   const flipRef = useRef(null);
+  const builtForRef = useRef(null); // the measurement the book was built for
 
   const [unit, setUnit] = useState(undefined);
   const [pages, setPages] = useState(null); // page artwork, once drawn
@@ -135,6 +145,15 @@ export default function FlipbookViewer({ entry }) {
     const host = hostRef.current;
     if (!stage || !host || !pages?.length) return;
 
+    // Building the book changes what sits inside the stage, which can
+    // move a scrollbar and so report the stage as resized again. Ignoring
+    // a measurement that has not really changed stops that feeding back
+    // on itself, and stops a stray observation throwing away the reader's
+    // place in the book.
+    const measured = `${stage.clientWidth}x${stage.clientHeight}x${zoom}x${pages.length}`;
+    if (measured === builtForRef.current) return;
+    builtForRef.current = measured;
+
     if (flipRef.current) {
       try {
         flipRef.current.destroy();
@@ -158,17 +177,32 @@ export default function FlipbookViewer({ entry }) {
     const availableH = Math.max(320, stage.clientHeight - gutter.y * 2);
     const scale = ZOOM_STEPS[zoom] ?? 1;
 
-    // A spread only earns its place when each page stays readable;
-    // otherwise the book gives the whole stage to one page - a phone, a
-    // narrow embed, a single-sheet document.
-    //
-    // The decision is made here and handed to page-flip as `usePortrait`
-    // rather than left to its own heuristic, which infers orientation
-    // from the measured block width and disagrees.
-    const spreadWanted = pages.length > 1 && availableW / 2 >= MIN_SPREAD_PAGE;
+    /* --------------------------------------------------------------
+       How the book opens.
+
+       Only a document of three pages or more is a book with a cover:
+       page one stands alone, then the pages pair off (2-3, 4-5, ...),
+       as a real one does.
+
+       TWO pages are not a book. Given a cover and a spread, page two
+       would sit alone against an empty half, which reads as a missing
+       page. So a two-page document turns one page at a time at every
+       width: page 1, turn, page 2. Nothing is invented to pad it out
+       and nothing empty is ever shown.
+
+       A spread also has to earn its place: below a readable page width
+       the book gives the whole stage to one page, which is what every
+       phone and every narrow embed gets.
+
+       The decision is made here and handed to page-flip as
+       `usePortrait`, rather than left to its own heuristic, which infers
+       orientation from the measured block width and disagrees.
+       -------------------------------------------------------------- */
+    const isBook = pages.length > 2;
+    const spreadWanted = isBook && availableW / 2 >= MIN_SPREAD_PAGE;
     const columns = spreadWanted ? 2 : 1;
 
-    let pageW = Math.min(NATURAL_W, availableW / columns);
+    let pageW = Math.min(MAX_PAGE_W, availableW / columns);
     let pageH = pageW * SHEET_RATIO;
     if (pageH > availableH) {
       pageH = availableH;
@@ -214,11 +248,10 @@ export default function FlipbookViewer({ entry }) {
 
           usePortrait: !spreadWanted,
 
-          // The first sheet stands alone, as the cover of a book does, so
-          // that turning it is a real page turn. Without this a two-page
-          // document would simply lie open at both pages, with nothing
-          // left to turn.
-          showCover: true,
+          // The first sheet stands alone, as the cover of a book does.
+          // Only a real book has one: with two pages it would strand
+          // page two against an empty half.
+          showCover: isBook,
           autoSize: false,
 
           // Every way of turning a page: the buttons, a click, a drag of
@@ -234,6 +267,32 @@ export default function FlipbookViewer({ entry }) {
         flipRef.current = flip;
         loaded = true;
 
+        /* ------------------------------------------------------------
+           Nothing empty may look like a page.
+
+           page-flip's canvas renderer repaints the whole book area
+           solid white on every frame and then draws the pages over it.
+           Where a book legitimately shows one page and not two - beside
+           the cover, and beside a final page when the count is even -
+           that leaves a page-sized white rectangle, which reads as a
+           blank sheet that is not in the document.
+
+           Clearing to transparent instead lets the viewer's own
+           background show through in those places, so the only things
+           that look like pages are the real ones. No page is invented
+           and none is hidden; this only changes what is behind them.
+           ------------------------------------------------------------ */
+        try {
+          const render = flip.getRender?.();
+          const canvas = flip.getUI?.()?.getCanvas?.();
+          const ctx = canvas?.getContext('2d');
+          if (render && ctx && canvas) {
+            render.clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        } catch {
+          /* a future page-flip may not expose this; the book still works */
+        }
+
         setPage(flip.getCurrentPageIndex());
         setSpread(spreadWanted ? 2 : 1);
 
@@ -248,23 +307,45 @@ export default function FlipbookViewer({ entry }) {
       });
   }, [pages, zoom, entry.title]);
 
-  /* --- 4. build once the pages exist, and rebuild on resize ---------- */
+  /* --- 4. build once the pages exist, and rebuild when the room does - */
   useEffect(() => {
     if (!pages?.length) return undefined;
     build();
 
     let timer;
-    const onResize = () => {
+    const rebuild = () => {
       clearTimeout(timer);
       timer = setTimeout(build, 180);
     };
-    window.addEventListener('resize', onResize);
-    window.addEventListener('orientationchange', onResize);
+
+    /* --------------------------------------------------------------
+       The book is sized from the STAGE, not from the window.
+
+       Embedded in someone else's page, the window may never change
+       while the iframe around this viewer does - a responsive column,
+       a sidebar opening, a container transition. A ResizeObserver on
+       the stage catches all of those, and the iframe being resized
+       too, so the one signal covers every case.
+
+       It is watched rather than polled, and the rebuild is debounced,
+       because building the book changes what is inside the stage and a
+       scrollbar appearing or leaving would otherwise feed straight back
+       in. `build` itself only acts on a real change in the measured
+       size, which closes that loop.
+       -------------------------------------------------------------- */
+    const stage = stageRef.current;
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(rebuild) : null;
+    if (observer && stage) observer.observe(stage);
+    else window.addEventListener('resize', rebuild);
+
+    window.addEventListener('orientationchange', rebuild);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('orientationchange', onResize);
+      observer?.disconnect();
+      window.removeEventListener('resize', rebuild);
+      window.removeEventListener('orientationchange', rebuild);
       if (flipRef.current) {
         try {
           flipRef.current.destroy();

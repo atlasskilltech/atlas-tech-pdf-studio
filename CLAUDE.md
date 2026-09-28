@@ -160,11 +160,22 @@ do not introduce one. A document's id is its registry slug.
   its gradient and shadows. Page artwork comes from the existing
   `rasterizeSheet()` at `VIEWER_SCALE`, drawn once per document and cached.
   Do not switch this back to `loadFromHTML`.
-- `showCover: true` so the first sheet stands alone and turning it is a real page
-  turn. Without it a two-page document lies open at both pages with nothing left
-  to turn.
-- A single-sheet document gets **no** flip engine and no page navigation - just
-  the page image, plus zoom and fullscreen.
+- **How the book opens is decided by the page count, and only real pages are
+  ever shown.** No blank, cover or placeholder page is ever added.
+  - 1 page → no flip engine, no page navigation; just the page, zoom, fullscreen.
+  - 2 pages → one page at a time at every width (`usePortrait`, no `showCover`).
+    A cover-plus-spread would strand page two against an empty half.
+  - 3+ pages → `showCover: true`: `[1]`, then `[2|3]`, `[4|5]`, … A lone final
+    page on an even count is correct and needs no padding.
+- page-flip's canvas renderer repaints the whole book block **solid white**
+  every frame (`clear()`), so an empty half - beside the cover, or beside a lone
+  final page - looks like a blank sheet. The viewer replaces `render.clear` with
+  a transparent `clearRect` so the viewer background shows there instead. Keep
+  it; without it those states show a white rectangle the size of a page.
+- Sizing is measured from the **stage element** with a `ResizeObserver`, not from
+  `window`: inside an iframe the window may never change while the container
+  does. `build()` ignores a measurement identical to the one it last built for,
+  which stops a scrollbar appearing/disappearing from feeding back into itself.
 - Orientation is decided in `FlipbookViewer` and handed to page-flip as
   `usePortrait`; do not rely on the library's own heuristic, which infers it
   from measured widths and disagrees.

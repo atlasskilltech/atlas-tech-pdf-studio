@@ -84,13 +84,25 @@ trade-off is that the text in the flipbook is artwork — the selectable,
 searchable text and the clickable links live in the downloadable PDF.
 
 Turn a page by clicking, dragging its corner, swiping, using the arrow keys or
-the toolbar buttons. The first sheet stands alone as a cover, so a two-page
-document has a real page to turn; longer documents then read as spreads
-(1, 2–3, 4–5, …). A **single-sheet document is not a book**: it shows the page
-with no flip animation and no page navigation, just zoom and fullscreen.
+the toolbar buttons.
 
-The viewer shows a two-page spread where each page stays readable and a single
-page otherwise — every phone, a tablet held upright, a narrow embed.
+**Only the document's real pages are ever shown** — nothing blank is invented to
+pad a spread out. How the book opens follows the page count:
+
+| Pages | How it reads |
+|---|---|
+| 1 | the page alone; no flip animation and no page navigation, just zoom and fullscreen |
+| 2 | one page at a time: `[1]` → turn → `[2]` |
+| 3+ | `[1]` as the cover, then `[2ǀ3]`, `[4ǀ5]`, … — a lone final page on an even count is simply the last page |
+
+A spread also has to earn its place: below a readable page width the book gives
+the whole stage to one page, which is what every phone, every tablet held
+upright and every narrow embed gets.
+
+The viewer measures the **container**, not the window, through a
+`ResizeObserver` — so an embed re-lays itself out when the iframe or its
+surrounding column changes size, even though the window never did. The page
+keeps its A4 proportions at every size and never overflows the frame.
 
 Only `/flipbook/*` is embeddable: it sends `Content-Security-Policy:
 frame-ancestors *`, while the studio sends `X-Frame-Options: SAMEORIGIN`.
