@@ -166,7 +166,7 @@ export const FEE_STRUCTURES = [
     terms: TERMS_BTECH,
   },
 
-  /* ----------------------------- B.Sc Finance (ISME) ----------------------------- */
+  /* --------------------------- BBA / B.Sc (ISME) --------------------------- */
   {
     id: 'bsc-finance',
     file: 'isme-bba-bsc-fee-structure-2027-28.pdf',
@@ -174,7 +174,7 @@ export const FEE_STRUCTURES = [
     cardName: 'ISME Undergraduate Degree',
     cardScope: 'BBA / BBA (Hons.) & B.Sc / B.Sc (Hons.)',
     level: 'Undergraduate Degree',
-    docTitle: 'B.Sc Finance',
+    docTitle: 'BBA / B.Sc',
     title: [
       { main: 'Bachelor of Business Administration', abbr: '(BBA / BBA Hons.)' },
       { main: 'Bachelor of Science', abbr: '(B.Sc / B.Sc Hons.)' },
