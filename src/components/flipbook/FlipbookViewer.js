@@ -39,7 +39,9 @@ import { PAGE_H_MM, PAGE_W_MM } from '@/lib/sheet';
 import FlipbookControls from './FlipbookControls';
 
 const SHEET_RATIO = PAGE_H_MM / PAGE_W_MM;
-const ZOOM_STEPS = [1, 1.35, 1.75];
+const ZOOM_STEPS = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+
+const clamp01 = (n) => Math.min(1, Math.max(0, n));
 
 /** Narrower than this and a page of a spread is too small to read, so the
     book shows one page at a time instead: every phone, and a tablet held
@@ -96,6 +98,9 @@ export default function FlipbookViewer({ entry }) {
   // React runs the effect cleanup, which destroys it, before the rebuild
   // gets a chance to ask it anything.
   const openAtRef = useRef(0);
+  // The point the next zoom step should hold still, carried from the
+  // gesture to the rebuild that answers it.
+  const anchorRef = useRef(null);
 
   const [unit, setUnit] = useState(undefined);
   const [pages, setPages] = useState(null); // page artwork, once drawn
@@ -233,6 +238,63 @@ export default function FlipbookViewer({ entry }) {
 
     mount.style.width = `${pageW * columns}px`;
     mount.style.height = `${pageH}px`;
+
+    /* ----------------------------------------------------------------
+       Hold the reader's place under the cursor.
+
+       Zooming rebuilds the book at a larger pixel size rather than
+       stretching what is already drawn, which is what keeps the page
+       sharp enough to read. The cost is that the new book is a new
+       object with a new size, so scrolling has to be re-derived: the
+       gesture recorded WHERE in the page it happened, as a fraction of
+       the page rather than a number of pixels, and that fraction is put
+       back under the same point on screen here. Whatever the reader was
+       looking at is still under the pointer.
+       ---------------------------------------------------------------- */
+    const anchor = anchorRef.current;
+    anchorRef.current = null;
+    host.style.transform = '';
+    if (anchor) {
+      const stageBox = stage.getBoundingClientRect();
+      const bookW = host.offsetWidth;
+      const bookH = host.offsetHeight;
+
+      // An axis where the book is taller or wider than the stage is
+      // moved by scrolling it.
+      stage.scrollLeft =
+        host.offsetLeft + anchor.fx * bookW - (anchor.cx - stageBox.left);
+      stage.scrollTop =
+        host.offsetTop + anchor.fy * bookH - (anchor.cy - stageBox.top);
+
+      /* An axis where the book still FITS has nothing to scroll, and an
+         auto margin would hold it in the middle - so the point under the
+         pointer would slide away as the book grew out from its centre.
+         There it is nudged instead, far enough to put the point back and
+         no further than keeps the whole book on the stage.
+
+         A translation is safe where a scale would not be: page-flip
+         locates a pointer as `clientX - boundingRect.left`, and moving
+         an element moves its rect with it, so the arithmetic is
+         unchanged and dragging a corner still works. */
+      const nudge = (offset, size, viewport, wanted) => {
+        if (size > viewport) return 0;
+        const start = offset;
+        return Math.min(Math.max(wanted - start, -start), viewport - size - start);
+      };
+      const dx = nudge(
+        host.offsetLeft,
+        bookW,
+        stage.clientWidth,
+        anchor.cx - stageBox.left - anchor.fx * bookW,
+      );
+      const dy = nudge(
+        host.offsetTop,
+        bookH,
+        stage.clientHeight,
+        anchor.cy - stageBox.top - anchor.fy * bookH,
+      );
+      if (dx || dy) host.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
 
     /* ----------------------------------------------------------------
        A single sheet is not a book.
@@ -442,6 +504,77 @@ export default function FlipbookViewer({ entry }) {
   const flipPrev = useCallback(() => flipRef.current?.flipPrev(), []);
   const flipNext = useCallback(() => flipRef.current?.flipNext(), []);
 
+  /* --------------------------------------------------------------------
+     One step of zoom, about a point.
+
+     The point is recorded as a FRACTION of the book rather than a pixel
+     offset, because the book that comes back from the rebuild is a
+     different size; a fraction survives that, a pixel offset does not.
+     `build` puts it back under the same place on screen.
+
+     Given no point - the toolbar buttons - it zooms about the middle of
+     the stage, which is what the reader is looking at when they are not
+     pointing at anything.
+     -------------------------------------------------------------------- */
+  const stepZoom = useCallback((delta, at) => {
+    const stage = stageRef.current;
+    const host = hostRef.current;
+    if (stage && host) {
+      const stageBox = stage.getBoundingClientRect();
+      const bookBox = host.getBoundingClientRect();
+      const cx = at?.cx ?? stageBox.left + stageBox.width / 2;
+      const cy = at?.cy ?? stageBox.top + stageBox.height / 2;
+      anchorRef.current = {
+        cx,
+        cy,
+        fx: bookBox.width ? clamp01((cx - bookBox.left) / bookBox.width) : 0.5,
+        fy: bookBox.height ? clamp01((cy - bookBox.top) / bookBox.height) : 0.5,
+      };
+    }
+    setZoom((z) => Math.min(ZOOM_STEPS.length - 1, Math.max(0, z + delta)));
+  }, []);
+
+  /* --------------------------------------------------------------------
+     The wheel zooms the book, and only the book.
+
+     Every wheel event over the stage is taken: turned into a zoom step
+     and then stopped, so it never reaches the page hosting the viewer.
+     That covers the trackpad pinch a browser sends as ctrl+wheel, which
+     would otherwise zoom the whole site.
+
+     Steps are coalesced into one per frame, so a fast flick of the wheel
+     rebuilds the book once rather than once per notch.
+
+     Touch is untouched: a wheel event is a mouse and trackpad thing, and
+     nothing here fires for a finger.
+     -------------------------------------------------------------------- */
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || !pages?.length) return undefined;
+
+    let queued = 0;
+    let frame = 0;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      queued += e.deltaY < 0 ? 1 : -1;
+      const at = { cx: e.clientX, cy: e.clientY };
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const delta = queued;
+        queued = 0;
+        if (delta) stepZoom(delta, at);
+      });
+    };
+
+    stage.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      stage.removeEventListener('wheel', onWheel);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pages, stepZoom]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowLeft') flipPrev();
@@ -486,14 +619,22 @@ export default function FlipbookViewer({ entry }) {
         /* At its natural size the book is measured to fit, so the stage
            has nothing to scroll. Zoomed in it deliberately does, which is
            how the reader pans around an enlarged page - inside the
-           viewer, never on the page hosting it. */
-        className={`relative flex min-h-0 flex-1 items-center justify-center p-1.5 sm:p-4 ${
+           viewer, never on the page hosting it, which is what
+           `overscroll-contain` settles.
+
+           The book is centred with `m-auto` on the book itself rather
+           than `justify-center` on the stage: centring a flex line puts
+           the overflow on BOTH sides when the book is larger than the
+           stage, and the part that overflows the start can never be
+           scrolled to. An auto margin centres the same way and leaves
+           the whole book reachable. */
+        className={`relative flex min-h-0 flex-1 overscroll-contain p-1.5 sm:p-4 ${
           zoom > 0 ? 'overflow-auto' : 'overflow-hidden'
         }`}
       >
-        <div ref={hostRef} className="shrink-0" />
+        <div ref={hostRef} className="m-auto shrink-0" />
         {pages ? null : (
-          <p className="absolute text-sm font-semibold text-[var(--atlas-indigo)]/70">
+          <p className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[var(--atlas-indigo)]/70">
             Preparing the flipbook&hellip;
           </p>
         )}
@@ -509,8 +650,8 @@ export default function FlipbookViewer({ entry }) {
         fullscreen={fullscreen}
         onPrev={flipPrev}
         onNext={flipNext}
-        onZoomIn={() => setZoom((z) => Math.min(ZOOM_STEPS.length - 1, z + 1))}
-        onZoomOut={() => setZoom((z) => Math.max(0, z - 1))}
+        onZoomIn={() => stepZoom(1)}
+        onZoomOut={() => stepZoom(-1)}
         onFullscreen={toggleFullscreen}
       />
 

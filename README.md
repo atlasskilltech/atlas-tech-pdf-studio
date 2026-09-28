@@ -164,6 +164,12 @@ device and a context scaled to match.
 Turn a page by clicking, dragging its corner, swiping, using the arrow keys or
 the toolbar buttons.
 
+**Zoom** runs 100 · 125 · 150 · 175 · 200 · 250 · 300%, from the toolbar or the
+mouse wheel. Wheel zoom is anchored on the pointer — whatever is under the cursor
+stays under it — and the book is rebuilt at the larger size rather than stretched,
+so the page stays sharp enough to read at every level. Zoomed in, the viewer pans
+within itself and never scrolls the page hosting it; back at 100% it re-centres.
+
 **Only the document's real pages are ever shown** — nothing blank is invented to
 pad a spread out. How the book opens follows the page count:
 

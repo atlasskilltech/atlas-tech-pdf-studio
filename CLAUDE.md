@@ -216,6 +216,24 @@ do not introduce one. A document's id is its registry slug.
   takes the rest (`flex-1` over `min-h-0`), and the root is `overflow-hidden`.
   The stage is `overflow-hidden` at natural size and `overflow-auto` only when
   zoomed, so panning is possible when it is wanted and never otherwise.
+- **Zoom rebuilds the book rather than scaling it.** Seven steps
+  (100/125/150/175/200/250/300%). A CSS `transform: scale()` would be smoother
+  but would go soft exactly when the reader zooms in to read, AND would break
+  page-flip's hit testing - it locates a pointer as `clientX - rect.left`, which
+  a scale invalidates. A *translate* is safe there (rect moves with the element)
+  and is used to nudge an axis that cannot scroll.
+- The wheel zooms, anchored on the pointer: the gesture records where it happened
+  as a FRACTION of the book (a pixel offset would not survive the rebuild), and
+  `build` puts that fraction back under the same point. An axis that overflows is
+  moved by scrolling; one that still fits is nudged by a clamped translate. Where
+  the scroll range is smaller than the anchor needs, it clamps - the book is kept
+  on the stage rather than floating into empty space.
+- Every wheel event over the stage is `preventDefault`ed, which also stops the
+  trackpad pinch (ctrl+wheel) zooming the host page. The stage is
+  `overscroll-contain` so panning never chains to the page outside.
+- The book is centred with `m-auto` on the book, NOT `justify-center` on the
+  stage: centring a flex line puts the overflow on both sides and the start of it
+  can never be scrolled to.
 - A rebuild is a new book, so the current page is kept in a ref (`openAtRef`)
   and replayed through `startPage`. It cannot be read off the flip instance at
   rebuild time: on a zoom change React runs the effect cleanup, which destroys
