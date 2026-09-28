@@ -101,6 +101,9 @@ export default function FlipbookViewer({ entry }) {
   // The point the next zoom step should hold still, carried from the
   // gesture to the rebuild that answers it.
   const anchorRef = useRef(null);
+  // The grab in progress: where it started, and where the stage was
+  // scrolled to when it did.
+  const panRef = useRef(null);
 
   const [unit, setUnit] = useState(undefined);
   const [pages, setPages] = useState(null); // page artwork, once drawn
@@ -108,6 +111,7 @@ export default function FlipbookViewer({ entry }) {
   const [page, setPage] = useState(0);
   const [spread, setSpread] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
+  const [panning, setPanning] = useState(false);
 
   // How many pages the book has is simply how many were drawn, so it is
   // derived rather than stored - nothing has to keep the two in step.
@@ -575,6 +579,77 @@ export default function FlipbookViewer({ entry }) {
     };
   }, [pages, stepZoom]);
 
+  /* --------------------------------------------------------------------
+     Drag to move an enlarged page around.
+
+     Only once zoomed. At its natural size the book behaves exactly as it
+     did: the pointer belongs to page-flip, and a drag turns a page.
+
+     Above 100% the pointer belongs to the reader instead - they are
+     inspecting one page, not leafing through - so the press is caught on
+     the way DOWN to the book, before page-flip's own handler can see it,
+     and turned into panning. Turning pages is still there on the
+     toolbar and the arrow keys.
+
+     Scrolling the stage is what actually moves the book, so the browser
+     does the clamping: the page can be pushed to its edges and no
+     further, and never off into space. The move listeners sit on the
+     window so the grab survives the pointer leaving the stage, and the
+     whole thing is mouse-only - a finger still scrolls and still turns
+     pages exactly as it did.
+     -------------------------------------------------------------------- */
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || zoom === 0) return undefined;
+
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      // leave the scrollbars alone: a press in the gutter is a scrollbar
+      // drag, and the browser handles that better than this does
+      const box = stage.getBoundingClientRect();
+      if (
+        e.clientX - box.left > stage.clientWidth ||
+        e.clientY - box.top > stage.clientHeight
+      ) {
+        return;
+      }
+      e.preventDefault(); // no text selection, no image drag
+      e.stopPropagation(); // and page-flip never learns of it
+      panRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        left: stage.scrollLeft,
+        top: stage.scrollTop,
+      };
+      setPanning(true);
+    };
+
+    const onMove = (e) => {
+      const from = panRef.current;
+      if (!from) return;
+      stage.scrollLeft = from.left - (e.clientX - from.x);
+      stage.scrollTop = from.top - (e.clientY - from.y);
+    };
+
+    const onUp = () => {
+      if (!panRef.current) return;
+      panRef.current = null;
+      setPanning(false);
+    };
+
+    stage.addEventListener('mousedown', onDown, true); // capture, not bubble
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      stage.removeEventListener('mousedown', onDown, true);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      // Back to its natural size, or unmounted, mid-grab: let it go.
+      panRef.current = null;
+      setPanning(false);
+    };
+  }, [zoom]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowLeft') flipPrev();
@@ -629,7 +704,9 @@ export default function FlipbookViewer({ entry }) {
            scrolled to. An auto margin centres the same way and leaves
            the whole book reachable. */
         className={`relative flex min-h-0 flex-1 overscroll-contain p-1.5 sm:p-4 ${
-          zoom > 0 ? 'overflow-auto' : 'overflow-hidden'
+          zoom > 0
+            ? `overflow-auto ${panning ? 'cursor-grabbing' : 'cursor-grab'}`
+            : 'overflow-hidden'
         }`}
       >
         <div ref={hostRef} className="m-auto shrink-0" />
