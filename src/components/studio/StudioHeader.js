@@ -3,11 +3,17 @@
 /* =====================================================================
    The studio header.
 
-   Interface furniture, not part of any document. It carries the ATLAS
-   lockup at a size that leaves the artwork untouched - fixed height,
-   width free - and the one action that applies to the whole collection.
+   Interface furniture, not part of any document: this is the product's
+   own branding, not the university's. It carries the ATLAS Tech PDF
+   Studio lockup at a size that leaves the artwork untouched - fixed
+   height, width free - the line describing the collection below it, and
+   the one action that applies to the whole collection.
+
+   The lockup already sets the product's name in type, so the <h1>
+   beside it would only repeat what the image says; it is kept for
+   structure and read by screen readers instead.
    ===================================================================== */
-import { ATLAS_LOCKUP } from '@/lib/brand';
+import { PRODUCT } from '@/lib/product';
 
 function DownloadIcon() {
   return (
@@ -21,21 +27,20 @@ export default function StudioHeader({ onDownloadAll, busy }) {
   return (
     <header className="bg-[var(--atlas-indigo)] text-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={ATLAS_LOCKUP.src}
-          alt={ATLAS_LOCKUP.alt}
-          className="h-10 w-auto sm:h-12"
-        />
-        <div className="mr-auto min-w-0">
-          <h1 className="text-base font-bold leading-tight sm:text-lg lg:text-xl">
-            Fee Structures 2027&ndash;28
-          </h1>
-          <p className="text-[0.7rem] leading-snug text-white/75 sm:text-xs lg:text-sm">
-            Academic Year 2027&ndash;28 · Intake 27 · Approved by the Fee
-            Fixation Committee, 22 September 2026
-          </p>
-        </div>
+        <h1 className="flex-none">
+          <span className="sr-only">{PRODUCT.name}</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={PRODUCT.logo.src}
+            width={PRODUCT.logo.width}
+            height={PRODUCT.logo.height}
+            alt={PRODUCT.logo.alt}
+            className="h-10 w-auto sm:h-12"
+          />
+        </h1>
+        <p className="mr-auto min-w-0 text-[0.7rem] leading-snug text-white/75 sm:text-xs lg:text-sm">
+         Create · Manage · Preview & Share Professional PDFs
+        </p>
         <button
           type="button"
           onClick={onDownloadAll}

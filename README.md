@@ -74,6 +74,20 @@ order of schools and of levels is declared there, because neither is
 alphabetical: ATLAS comes first because it applies to everyone, and a degree
 reads undergraduate-first.
 
+## Branding
+
+Two brands live side by side and must not be mixed:
+
+- **The product** — *ATLAS Tech PDF Studio* — is the application's own identity:
+  the header lockup, the browser title and the app icon. It lives in
+  `src/lib/product.js`, with artwork in `public/brand/` and the icon at
+  `src/app/icon.png`.
+- **The university** — ATLAS SkillTech and its schools — is the branding of the
+  **documents**. It lives in `src/lib/brand.js` and appears only on the sheets.
+
+The product logo never appears on a PDF; a school lockup never stands in for the
+product.
+
 ## Flipbook embed
 
 `/flipbook/<id>` is a public, page-turning viewer for one document, built to be

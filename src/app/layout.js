@@ -14,6 +14,7 @@
    ===================================================================== */
 import 'tailwindcss/index.css';
 import { ATLAS, INK } from '@/lib/brand';
+import { PRODUCT } from '@/lib/product';
 import { fontClassName, fontVars } from '@/lib/fonts';
 
 /** Design constants inherited by the whole application. */
@@ -30,9 +31,15 @@ const rootVars = {
 };
 
 export const metadata = {
-  title: 'ATLAS Tech PDF Studio',
+  title: {
+    default: PRODUCT.name,
+    // Every other page names itself and is placed inside the product,
+    // so a document's own title still reads first in a browser tab.
+    template: `%s · ${PRODUCT.name}`,
+  },
+  applicationName: PRODUCT.name,
   description:
-    'Fee structures and policy documents for ATLAS SkillTech University — preview, print and export to PDF.',
+    'Design, preview and export the ATLAS SkillTech University fee structures and policy documents as print-ready PDFs and embeddable flipbooks.',
 };
 
 export const viewport = {

@@ -109,6 +109,23 @@ the filename, and are unaffected by a rename.
 Visible document titles (`docTitle`) are separate and must not change when a
 filename does.
 
+## 6b. Product branding — `src/lib/product.js`
+
+The APPLICATION's own identity - name and lockup - lives there, deliberately
+apart from `src/lib/brand.js`, which holds ATLAS SkillTech University's marks
+for the DOCUMENTS. Never put the product logo on a sheet, and never use a
+school lockup as the product mark.
+
+The product name is **ATLAS Tech PDF Studio**; "Fee Structures 2027-28"
+describes the collection, not the product. Document titles are separate again
+and are not touched by branding work.
+
+Header lockup: the supplied transparent artwork is the reversed (light)
+version, which is why it sits directly on the indigo band. Its intrinsic size
+in `product.js` is derived from the file - keep them in step. The app icon is
+`src/app/icon.png` (plus `apple-icon.png`), Next's file convention, so the tags
+are generated automatically; no manual <link> is needed.
+
 ## 7. School branding — `src/lib/brand.js`
 
 Schools are data. Adding one means adding an entry there plus its lockup — no

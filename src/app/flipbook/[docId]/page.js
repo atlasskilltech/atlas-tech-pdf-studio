@@ -26,7 +26,9 @@ export async function generateMetadata({ params }) {
   if (!entry) return { title: 'Not found' };
 
   return {
-    title: `${entry.title} — ATLAS SkillTech University`,
+    // Absolute, so the product name is not appended: this page is the
+    // public viewer, and what it shows belongs to the university.
+    title: { absolute: `${entry.title} — ATLAS SkillTech University` },
     description: `${entry.name} · ${entry.scope}`,
     // An embedded viewer should not be indexed apart from its host page.
     robots: { index: false, follow: false },

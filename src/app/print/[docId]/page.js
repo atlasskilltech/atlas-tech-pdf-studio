@@ -20,7 +20,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { docId } = await params;
-  if (docId === 'all') return { title: 'Fee Structures 2027-28' };
+  if (docId === 'all') return { title: 'All documents' };
   const entry = findDocument(docId);
   return { title: entry ? entry.file.replace(/\.pdf$/, '') : 'Not found' };
 }
