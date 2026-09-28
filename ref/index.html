@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fee Structures 2027-28 · ATLAS SkillTech University</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Tailwind CSS (browser build, vendored locally: no Node, npm or build step) -->
+  <script src="js/vendor/tailwindcss.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            atlas: '#342B7C', teal: '#3CA7B6',
+            isdi: '#E12A7B', isme: '#009FE0', ugdx: '#ED1A3B'
+          },
+          fontFamily: { sans: ['Montserrat', 'Arial', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <script src="js/vendor/html2canvas.min.js"></script>
+  <script src="js/vendor/jspdf.umd.min.js"></script>
+  <script src="js/vendor/jszip.min.js"></script>
+  <script src="js/assets-data.js"></script>
+  <script src="js/fonts-data.js"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased">
+
+<!-- =====================================================================
+     OUTER INTERFACE (not part of the documents)
+     ===================================================================== -->
+<div id="app" class="min-h-screen">
+  <header class="bg-atlas text-white">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
+      <img data-asset="atlas-3-schools-horizontal" src="assets/logos/atlas-3-schools-horizontal.svg" alt="ATLAS SkillTech University — ISDI, ISME, uGDX" class="h-10 w-auto">
+      <div class="mr-auto">
+        <h1 class="text-lg font-bold leading-tight sm:text-xl">Fee Structures 2027–28</h1>
+        <p class="text-xs text-white/75 sm:text-sm">Academic Year 2027–28 · Intake 27 · Approved by the Fee Fixation Committee, 22 September 2026</p>
+      </div>
+      <button id="download-all" type="button" class="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-atlas shadow-sm hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v8.59l2.3-2.3a1 1 0 111.4 1.42l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 111.4-1.42l2.3 2.3V3a1 1 0 011-1zM3 15a1 1 0 011 1v1h12v-1a1 1 0 112 0v2a1 1 0 01-1 1H3a1 1 0 01-1-1v-2a1 1 0 011-1z"/></svg>
+        Download All Fee Structures
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+    <!-- Document list (built from the <article class="doc"> elements below) -->
+    <nav aria-label="Fee structures" class="lg:sticky lg:top-6 lg:self-start">
+      <ul id="doc-list" class="space-y-3"></ul>
+    </nav>
+
+    <!-- Viewer -->
+    <section aria-live="polite" class="min-w-0">
+      <div class="mb-3 flex flex-wrap items-center gap-3">
+        <h2 id="viewer-title" class="mr-auto text-base font-semibold text-atlas"></h2>
+        <span id="viewer-pages" class="text-sm text-slate-500"></span>
+        <button id="viewer-download" type="button" class="rounded-md bg-atlas px-3 py-1.5 text-sm font-semibold text-white hover:bg-atlas/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal">Download PDF</button>
+      </div>
+      <div id="viewer" class="flex flex-col items-center gap-6 overflow-hidden rounded-lg bg-slate-300/60 p-4 sm:p-6"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Progress toast -->
+<div id="toast" class="pointer-events-none fixed bottom-4 left-1/2 z-50 hidden -translate-x-1/2 rounded-md bg-slate-900 px-4 py-2 text-sm text-white shadow-lg" role="status"></div>
+
+<!-- Off-screen host used while rasterising pages for PDF export -->
+<div id="render-host" aria-hidden="true" style="position:fixed;left:-100000px;top:0;width:210mm;"></div>
+<!-- Holds the pages being printed via the browser print dialog -->
+<div id="print-root"></div>
+
+<!-- =====================================================================
+     DOCUMENTS
+     Built by js/render-docs.js from js/docs-data.js, then the Fee Refund
+     Policy is appended by js/render-refund-policy.js. Each
+     <article class="doc"> is one document and each <section class="page">
+     inside it is one A4 sheet.
+     The container is parked off-screen rather than hidden, so pages keep
+     a real layout and can be measured, scaled to fit and rasterised.
+     ===================================================================== -->
+<div id="documents" aria-hidden="true"></div>
+
+
+<script src="js/docs-data.js"></script>
+<script src="js/render-docs.js"></script>
+<!-- Fee Refund Policy: appended after the fee structures, so it is the
+     last document in the list. It keeps its own ATLAS branding. -->
+<script src="js/refund-policy-data.js"></script>
+<script src="js/render-refund-policy.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

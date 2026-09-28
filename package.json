@@ -1,0 +1,26 @@
+{
+  "name": "atlas-tech-pdf-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ATLAS Tech PDF Studio - fee-structure and policy PDF design system",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "jspdf": "^3.0.1",
+    "jszip": "^3.10.1",
+    "next": "^15.5.4",
+    "page-flip": "^2.0.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.6",
+    "tailwindcss": "^4.1.13"
+  }
+}

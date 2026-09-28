@@ -1,0 +1,359 @@
+'use client';
+
+/* =====================================================================
+   The public flipbook viewer.
+
+   This is a VIEWER, not a second document system. It shows the very
+   same sheets the studio previews and the PDF exporter rasterises - the
+   components in components/pdf, fitted by the same pass in lib/fit -
+   so a flipbook can never drift from the PDF it represents. Nothing
+   here knows what a fee structure is.
+
+   How the pages reach the flip engine:
+
+     React renders the document's sheets once, off-screen. The fit pass
+     measures them. Each finished sheet is then drawn to an image by the
+     SAME rasteriser the PDF exporter uses (lib/pdf/rasterize), at screen
+     resolution rather than print resolution, and the book is loaded from
+     those images.
+
+   Images rather than the live DOM, on purpose: page-flip renders an HTML
+   book by transforming real elements, which can only produce a flat
+   fold, while an image book is drawn on a canvas and gets the real
+   thing - a curved page curl with the gradient shading and the inner,
+   outer and book shadows of a page physically turning. That is the
+   whole point of this viewer, and it costs one trade-off: the text in
+   the flipbook is artwork, while the selectable text and the clickable
+   links live in the downloadable PDF.
+
+   The pages are drawn ONCE per document and cached. Resizing, zooming
+   and turning all reuse them.
+   ===================================================================== */
+import { useCallback, useEffect, useRef, useState } from 'react';
+import 'page-flip/src/Style/stPageFlip.css';
+import { documentSheets } from '@/components/documents/DocumentSheets';
+import { fitAll, whenRenderable } from '@/lib/fit';
+import { rasterizeSheet } from '@/lib/pdf/rasterize';
+import { SCALE_SETS } from '@/lib/registry';
+import { PAGE_H_MM, PAGE_W_MM } from '@/lib/sheet';
+import FlipbookControls from './FlipbookControls';
+
+const SHEET_RATIO = PAGE_H_MM / PAGE_W_MM;
+const ZOOM_STEPS = [1, 1.35, 1.75];
+
+/** Narrower than this and a page of a spread is too small to read, so the
+    book shows one page at a time instead: every phone, and a tablet held
+    upright. */
+const MIN_SPREAD_PAGE = 380;
+
+/** Room to leave around the spread, so a page never touches the frame.
+    Narrow screens get less of it: every pixel of width is a bigger sheet. */
+const GUTTER = { wide: { x: 24, y: 16 }, narrow: { x: 10, y: 8 } };
+
+/**
+ * Page artwork is drawn at twice the sheet's natural size: sharp on the
+ * largest screen and through the zoom steps, without carrying a
+ * print-resolution canvas per page. JPEG because a sheet is white paper
+ * with type on it, which is what JPEG is good at - the same choice the
+ * PDF exporter makes.
+ */
+const VIEWER_SCALE = 2;
+const VIEWER_QUALITY = 0.92;
+
+/** A4 width at CSS resolution: the size the sheets actually lay out at. */
+const NATURAL_W = PAGE_W_MM * (96 / 25.4);
+
+export default function FlipbookViewer({ entry }) {
+  const sourceRef = useRef(null); // off-screen React sheets
+  const stageRef = useRef(null); // the measured area
+  const hostRef = useRef(null); // stable; React owns this one
+  const flipRef = useRef(null);
+
+  const [unit, setUnit] = useState(undefined);
+  const [pages, setPages] = useState(null); // page artwork, once drawn
+  const [zoom, setZoom] = useState(0);
+  const [page, setPage] = useState(0);
+  const [spread, setSpread] = useState(1);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // How many pages the book has is simply how many were drawn, so it is
+  // derived rather than stored - nothing has to keep the two in step.
+  const total = pages?.length ?? 0;
+
+  /* --- 1. fit the sheets, exactly as the studio does ----------------- */
+  useEffect(() => {
+    let cancelled = false;
+    const source = sourceRef.current;
+
+    whenRenderable(source).then(() => {
+      if (cancelled || !source) return;
+      const units = fitAll(source, SCALE_SETS);
+      setUnit(units[scaleSetOf(entry)]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entry]);
+
+  /* --- 2. draw each fitted sheet to a page image, once --------------- */
+  useEffect(() => {
+    if (unit === undefined) return undefined;
+    let cancelled = false;
+
+    // A frame after the fitted unit paints, so each sheet is drawn at the
+    // size the fit pass settled on.
+    const handle = requestAnimationFrame(() => {
+      const source = sourceRef.current;
+      if (!source) return;
+      const sheets = Array.from(source.querySelectorAll('[data-sheet]'));
+
+      (async () => {
+        const urls = [];
+        for (const sheet of sheets) {
+          // Sequential: each sheet is a full-page canvas, and drawing
+          // them all at once would spike memory for no gain.
+          const canvas = await rasterizeSheet(sheet, VIEWER_SCALE);
+          if (cancelled) return;
+          urls.push(canvas.toDataURL('image/jpeg', VIEWER_QUALITY));
+        }
+        if (!cancelled) setPages(urls);
+      })().catch((error) => {
+        console.error('The flipbook pages could not be drawn:', error);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(handle);
+    };
+  }, [unit]);
+
+  /* --- 3. build the book from those page images ---------------------- */
+  const build = useCallback(() => {
+    const stage = stageRef.current;
+    const host = hostRef.current;
+    if (!stage || !host || !pages?.length) return;
+
+    if (flipRef.current) {
+      try {
+        flipRef.current.destroy();
+      } catch {
+        /* already gone */
+      }
+      flipRef.current = null;
+    }
+
+    // page-flip's destroy() removes the element it was given from the
+    // document, so it never gets the same one twice: each build hands it
+    // a fresh, disposable child of the host React owns. Rebuilding on
+    // zoom or resize is then always a clean start.
+    host.replaceChildren();
+    const mount = document.createElement('div');
+    mount.className = 'shrink-0';
+    host.appendChild(mount);
+
+    const gutter = stage.clientWidth < 640 ? GUTTER.narrow : GUTTER.wide;
+    const availableW = Math.max(240, stage.clientWidth - gutter.x * 2);
+    const availableH = Math.max(320, stage.clientHeight - gutter.y * 2);
+    const scale = ZOOM_STEPS[zoom] ?? 1;
+
+    // A spread only earns its place when each page stays readable;
+    // otherwise the book gives the whole stage to one page - a phone, a
+    // narrow embed, a single-sheet document.
+    //
+    // The decision is made here and handed to page-flip as `usePortrait`
+    // rather than left to its own heuristic, which infers orientation
+    // from the measured block width and disagrees.
+    const spreadWanted = pages.length > 1 && availableW / 2 >= MIN_SPREAD_PAGE;
+    const columns = spreadWanted ? 2 : 1;
+
+    let pageW = Math.min(NATURAL_W, availableW / columns);
+    let pageH = pageW * SHEET_RATIO;
+    if (pageH > availableH) {
+      pageH = availableH;
+      pageW = pageH / SHEET_RATIO;
+    }
+    pageW = Math.floor(pageW * scale);
+    pageH = Math.floor(pageW * SHEET_RATIO);
+
+    mount.style.width = `${pageW * columns}px`;
+    mount.style.height = `${pageH}px`;
+
+    /* ----------------------------------------------------------------
+       A single sheet is not a book.
+
+       No flip engine and no page turns; the control bar drops its page
+       navigation too, leaving the zoom and fullscreen the viewer always
+       offers.
+       ---------------------------------------------------------------- */
+    if (pages.length === 1) {
+      const only = document.createElement('img');
+      only.src = pages[0];
+      only.alt = entry.title;
+      only.className = 'block h-full w-full bg-white shadow-lg';
+      mount.appendChild(only);
+      return;
+    }
+
+    let loaded = false;
+    // Loaded on demand: the flip engine is only needed once the pages are
+    // drawn, and never at all by the studio.
+    import('page-flip')
+      .then(({ PageFlip }) => {
+        const flip = new PageFlip(mount, {
+          width: pageW,
+          height: pageH,
+          size: 'fixed',
+
+          // The turn itself: a soft page carrying its own shadow, at a
+          // speed that reads as paper rather than as a transition.
+          drawShadow: true,
+          maxShadowOpacity: 0.6,
+          flippingTime: 800,
+
+          usePortrait: !spreadWanted,
+
+          // The first sheet stands alone, as the cover of a book does, so
+          // that turning it is a real page turn. Without this a two-page
+          // document would simply lie open at both pages, with nothing
+          // left to turn.
+          showCover: true,
+          autoSize: false,
+
+          // Every way of turning a page: the buttons, a click, a drag of
+          // the corner, a swipe.
+          useMouseEvents: true,
+          showPageCorners: true,
+          disableFlipByClick: false,
+          mobileScrollSupport: true,
+          swipeDistance: 30,
+        });
+
+        flip.loadFromImages(pages);
+        flipRef.current = flip;
+        loaded = true;
+
+        setPage(flip.getCurrentPageIndex());
+        setSpread(spreadWanted ? 2 : 1);
+
+        flip.on('flip', (e) => setPage(e.data));
+        flip.on('changeOrientation', (e) =>
+          setSpread(e.data === 'portrait' ? 1 : 2),
+        );
+      })
+      .catch((error) => {
+        console.error('The flipbook engine could not be loaded:', error);
+        if (!loaded) mount.replaceChildren();
+      });
+  }, [pages, zoom, entry.title]);
+
+  /* --- 4. build once the pages exist, and rebuild on resize ---------- */
+  useEffect(() => {
+    if (!pages?.length) return undefined;
+    build();
+
+    let timer;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(build, 180);
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      if (flipRef.current) {
+        try {
+          flipRef.current.destroy();
+        } catch {
+          /* already gone */
+        }
+        flipRef.current = null;
+      }
+    };
+  }, [pages, build]);
+
+  /* --- controls ------------------------------------------------------ */
+  // flipPrev/flipNext animate the turn, and the buttons, the keyboard and
+  // the swipe handler all go through them - so every route to the next
+  // page turns the page rather than replacing it.
+  const flipPrev = useCallback(() => flipRef.current?.flipPrev(), []);
+  const flipNext = useCallback(() => flipRef.current?.flipNext(), []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') flipPrev();
+      if (e.key === 'ArrowRight') flipNext();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [flipPrev, flipNext]);
+
+  const toggleFullscreen = useCallback(() => {
+    const root = stageRef.current?.closest('[data-flipbook-root]');
+    if (!document.fullscreenElement) root?.requestFullscreen?.().catch(() => {});
+    else document.exitFullscreen?.().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  return (
+    <div
+      data-flipbook-root=""
+      className="flex h-[100dvh] w-full flex-col bg-slate-200"
+    >
+      <div
+        ref={stageRef}
+        className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-1.5 sm:p-4"
+      >
+        <div ref={hostRef} className="shrink-0" />
+        {pages ? null : (
+          <p className="absolute text-sm font-semibold text-[var(--atlas-indigo)]/70">
+            Preparing the flipbook&hellip;
+          </p>
+        )}
+      </div>
+
+      <FlipbookControls
+        title={entry.title}
+        page={page}
+        total={total}
+        spread={spread}
+        zoom={zoom}
+        zoomSteps={ZOOM_STEPS.length}
+        fullscreen={fullscreen}
+        onPrev={flipPrev}
+        onNext={flipNext}
+        onZoomIn={() => setZoom((z) => Math.min(ZOOM_STEPS.length - 1, z + 1))}
+        onZoomOut={() => setZoom((z) => Math.max(0, z - 1))}
+        onFullscreen={toggleFullscreen}
+      />
+
+      {/* ---------------------------------------------------------------
+          The source sheets.
+
+          Parked off-screen rather than hidden, so they keep a real
+          layout and can be measured and drawn - the same arrangement
+          the studio uses for its document store.
+          --------------------------------------------------------------- */}
+      <div
+        ref={sourceRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-[-100000px] top-0 w-[210mm]"
+      >
+        {documentSheets(entry, unit)}
+      </div>
+    </div>
+  );
+}
+
+function scaleSetOf(entry) {
+  return entry.kind === 'policy' ? 'refund-policy' : 'fee-structures';
+}
