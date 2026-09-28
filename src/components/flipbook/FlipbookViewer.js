@@ -51,26 +51,39 @@ const MIN_SPREAD_PAGE = 380;
 const GUTTER = { wide: { x: 24, y: 16 }, narrow: { x: 10, y: 8 } };
 
 /**
- * Page artwork is drawn at twice the sheet's natural size: sharp on the
- * largest screen and through the zoom steps, without carrying a
- * print-resolution canvas per page. JPEG because a sheet is white paper
- * with type on it, which is what JPEG is good at - the same choice the
- * PDF exporter makes.
+ * How much detail the page artwork carries.
+ *
+ * The reader has to be able to read the page, so the artwork has to hold
+ * enough pixels for the largest the page will ever be drawn - which on a
+ * high-density display is twice the size it appears. Scaling with the
+ * device's own pixel ratio asks a plain screen for no more than it can
+ * show, and a Retina one for what it needs, and the ceiling keeps a
+ * three-times-density phone from rendering a canvas nothing can use.
+ *
+ * JPEG because a sheet is white paper with type on it, which is what
+ * JPEG is good at - the same choice the PDF exporter makes - and at this
+ * quality, oversampled, the type stays crisp.
  */
-const VIEWER_SCALE = 2;
-const VIEWER_QUALITY = 0.92;
+function viewerScale() {
+  const dpr =
+    typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  return Math.min(3, Math.max(2, 2 * dpr));
+}
+
+const VIEWER_QUALITY = 0.95;
 
 /** A4 width at CSS resolution: the size the sheets actually lay out at. */
 const NATURAL_W = PAGE_W_MM * (96 / 25.4);
 
 /**
- * How large a page may be drawn. The artwork is rendered at VIEWER_SCALE,
- * so this is the point past which it would be upscaled and go soft; below
- * it the book is free to use whatever room a tall window or a tall iframe
- * gives it, rather than stopping at the sheet's nominal size and leaving
- * the space empty.
+ * How large a page may be drawn: twice the sheet's own width. The
+ * artwork always carries at least that much detail (see `viewerScale`),
+ * so a page this size is still sharp, and below the ceiling the book is
+ * free to use whatever room a tall window or a tall iframe gives it,
+ * rather than stopping at the sheet's nominal size and leaving the space
+ * empty.
  */
-const MAX_PAGE_W = NATURAL_W * VIEWER_SCALE;
+const MAX_PAGE_W = NATURAL_W * 2;
 
 export default function FlipbookViewer({ entry }) {
   const sourceRef = useRef(null); // off-screen React sheets
@@ -123,12 +136,14 @@ export default function FlipbookViewer({ entry }) {
       if (!source) return;
       const sheets = Array.from(source.querySelectorAll('[data-sheet]'));
 
+      const scale = viewerScale();
+
       (async () => {
         const urls = [];
         for (const sheet of sheets) {
           // Sequential: each sheet is a full-page canvas, and drawing
           // them all at once would spike memory for no gain.
-          const canvas = await rasterizeSheet(sheet, VIEWER_SCALE);
+          const canvas = await rasterizeSheet(sheet, scale);
           if (cancelled) return;
           urls.push(canvas.toDataURL('image/jpeg', VIEWER_QUALITY));
         }
@@ -276,6 +291,46 @@ export default function FlipbookViewer({ entry }) {
         loaded = true;
 
         /* ------------------------------------------------------------
+           Draw the book at the display's real resolution.
+
+           page-flip sizes its canvas from the element's CSS width and
+           height and stops there, so on any high-density screen - most
+           laptops, every phone - the whole book is drawn at half the
+           pixels the display has and then stretched over them. The
+           artwork behind it is sharp; what the reader sees is not.
+
+           Overriding the one method that sizes the canvas fixes it at
+           the source: the backing store is scaled by the device pixel
+           ratio, and the context is scaled to match, so every drawing
+           call the library makes in CSS pixels lands on the full grid.
+           The CSS size is untouched - it comes from the stylesheet's
+           width:100% - so nothing about the layout moves.
+
+           It has to be the method rather than a one-off resize, because
+           page-flip calls it again whenever the book updates, and
+           setting `canvas.width` resets the context transform.
+           ------------------------------------------------------------ */
+        try {
+          const ui = flip.getUI?.();
+          const canvas = ui?.getCanvas?.();
+          const ctx = canvas?.getContext('2d');
+          const dpr = window.devicePixelRatio || 1;
+          if (ui && canvas && ctx && dpr > 0) {
+            ui.resizeCanvas = () => {
+              const cs = getComputedStyle(canvas);
+              const cssW = parseInt(cs.getPropertyValue('width'), 10) || 0;
+              const cssH = parseInt(cs.getPropertyValue('height'), 10) || 0;
+              canvas.width = Math.round(cssW * dpr);
+              canvas.height = Math.round(cssH * dpr);
+              ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            };
+            ui.update();
+          }
+        } catch {
+          /* a future page-flip may size its canvas differently */
+        }
+
+        /* ------------------------------------------------------------
            Nothing empty may look like a page.
 
            page-flip's canvas renderer repaints the whole book area
@@ -295,7 +350,18 @@ export default function FlipbookViewer({ entry }) {
           const canvas = flip.getUI?.()?.getCanvas?.();
           const ctx = canvas?.getContext('2d');
           if (render && ctx && canvas) {
-            render.clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Cleared in CSS pixels, because the context above is scaled
+            // by the device pixel ratio and every drawing call - this one
+            // included - is made in that same space.
+            render.clear = () => {
+              const cs = getComputedStyle(canvas);
+              ctx.clearRect(
+                0,
+                0,
+                parseInt(cs.getPropertyValue('width'), 10) || canvas.width,
+                parseInt(cs.getPropertyValue('height'), 10) || canvas.height,
+              );
+            };
           }
         } catch {
           /* a future page-flip may not expose this; the book still works */

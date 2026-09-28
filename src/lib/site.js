@@ -57,12 +57,13 @@ function attr(value) {
 }
 
 /**
- * The iframe an external site pastes in.
+/**
+ * What an external site pastes in.
  *
  * It has to stand on its own: dropped into an otherwise empty .html or
- * .php file, with no wrapper, no stylesheet and no script, it should
- * give a full-viewport flipbook and raise no scrollbars. Every rule it
- * needs therefore travels in the tag itself.
+ * .php file, with nothing else on the page, it should give a flipbook
+ * that reaches the edges of the window and raises no scrollbars. So
+ * everything it needs travels with it.
  *
  *   display:block  an iframe is inline by default, and the line box
  *                  under it adds about 4px - enough on its own to start
@@ -71,29 +72,43 @@ function attr(value) {
  *   width:100%     fills whatever it lands in: a bare body, a WordPress
  *                  block, a responsive column.
  *
- *   height:calc(100dvh - 16px)
- *                  the viewport, less the 8px top and bottom margin
- *                  every browser puts on <body> by default. Without that
- *                  subtraction a 100dvh frame is 16px taller than the
- *                  room it has, and the host page scrolls. A site that
- *                  resets its margins simply gets a frame 16px short of
- *                  the viewport, which also raises no scrollbar.
- *                  `dvh` rather than `vh` so it tracks a mobile
- *                  browser's address bar sliding in and out; the `vh`
- *                  line before it is the fallback for anything that does
- *                  not know dynamic viewport units, which drops the
- *                  declaration it cannot parse and keeps the one it can.
+ *   body:has(> .atlas-flipbook){margin:0}
+ *                  the white band above and below the frame is the 8px
+ *                  margin every browser puts on <body>, and it belongs
+ *                  to the host page, not to the viewer - measured, the
+ *                  viewer's own html and body already carry no margin or
+ *                  padding at all. It can only be answered from the host
+ *                  side, so the snippet answers it, and narrowly: the
+ *                  rule applies only where the frame is a DIRECT child
+ *                  of <body>, which is the bare-embed case. Nested in a
+ *                  real page - a template, an article, a block - it
+ *                  never matches and the host's own spacing is left
+ *                  exactly as it was.
+ *
+ *   heights        edge to edge at 100dvh once that margin is gone, and
+ *                  calc(100dvh - 16px) otherwise, so a browser too old
+ *                  for :has() still shows no scrollbar - just the 8px
+ *                  band. `dvh` tracks a mobile browser's address bar
+ *                  sliding in and out; the `vh` line before each one is
+ *                  the fallback for anything that cannot parse dynamic
+ *                  viewport units, which drops the declaration it does
+ *                  not understand and keeps the one it does.
  */
 export function embedCode(
   docId,
   { origin = resolveOrigin(), title = '' } = {},
 ) {
   return [
+    '<style>',
+    '  .atlas-flipbook{display:block;width:100%;border:0;',
+    '    height:calc(100vh - 16px);height:calc(100dvh - 16px)}',
+    '  body:has(> .atlas-flipbook){margin:0}',
+    '  body:has(> .atlas-flipbook) .atlas-flipbook{height:100vh;height:100dvh}',
+    '</style>',
     '<iframe',
+    '  class="atlas-flipbook"',
     `  src="${flipbookUrl(docId, origin)}"`,
     ...(title ? [`  title="${attr(title)}"`] : []),
-    '  width="100%"',
-    '  style="display:block;width:100%;height:calc(100vh - 16px);height:calc(100dvh - 16px);border:0"',
     '  allow="fullscreen"',
     '  allowfullscreen',
     '  loading="lazy">',

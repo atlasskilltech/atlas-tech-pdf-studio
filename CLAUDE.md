@@ -155,11 +155,22 @@ do not introduce one. A document's id is its registry slug.
 - `src/lib/site.js` holds the ONE public-URL value (`NEXT_PUBLIC_SITE_URL`) and
   builds the embed snippet. Embed codes must never contain localhost.
 - The snippet must stand alone in an empty `.html`/`.php` file with no wrapper,
-  CSS or JS, and raise no scrollbars. It therefore carries `display:block` (an
-  inline iframe adds a ~4px line box) and `height:calc(100dvh - 16px)` (the
-  default 8px `<body>` margins, top and bottom), preceded by a `vh` line as the
-  fallback. Do not "simplify" it to a bare `100dvh` - measured, that scrolls the
-  host page by exactly 16px.
+  CSS or JS, reach all four edges and raise no scrollbars. It therefore carries
+  `display:block` (an inline iframe adds a ~4px line box) and a scoped
+  `body:has(> .atlas-flipbook){margin:0}` - the white band top and bottom is the
+  host's default 8px `<body>` margin, NOT the viewer's (measured: the viewer's
+  own html/body already have none), so it can only be answered host-side. The
+  `> ` direct-child scope keeps it inert on a real page. `calc(100dvh - 16px)`
+  remains as the no-`:has()` fallback. Do not "simplify" any of this - measured,
+  a bare `100dvh` scrolls the host page by exactly 16px.
+- **Page sharpness depends on two things, and both must hold.** The artwork is
+  rendered at `2 × devicePixelRatio` (capped at 3) by `viewerScale()`, AND
+  page-flip's `ui.resizeCanvas` is overridden so the canvas backing store is
+  scaled by the device pixel ratio with `ctx.setTransform` to match. The stock
+  method sizes the backing store from the CSS box only, so on any HiDPI display
+  the whole book renders at half resolution and looks blurry however good the
+  source image is. It must be the method, not a one-off resize: page-flip calls
+  it again on every update, and setting `canvas.width` resets the transform.
 - The viewer root is `h-screen` plus an inline `height:100dvh`, so an unparsed
   dvh falls back to the class. The control bar takes its own height, the stage
   takes the rest (`flex-1` over `min-h-0`), and the root is `overflow-hidden`.

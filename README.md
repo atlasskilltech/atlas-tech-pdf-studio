@@ -50,11 +50,16 @@ embedded in someone else's website. **Get Embed Code** in the studio produces
 the iframe to paste:
 
 ```html
+<style>
+  .atlas-flipbook{display:block;width:100%;border:0;
+    height:calc(100vh - 16px);height:calc(100dvh - 16px)}
+  body:has(> .atlas-flipbook){margin:0}
+  body:has(> .atlas-flipbook) .atlas-flipbook{height:100vh;height:100dvh}
+</style>
 <iframe
+  class="atlas-flipbook"
   src="https://pdf.atlasuniversity.edu.in/flipbook/mba"
   title="Master of Business Administration (MBA)"
-  width="100%"
-  style="display:block;width:100%;height:calc(100vh - 16px);height:calc(100dvh - 16px);border:0"
   allow="fullscreen"
   allowfullscreen
   loading="lazy">
@@ -62,18 +67,24 @@ the iframe to paste:
 ```
 
 That snippet is self-contained: paste it into an otherwise empty `.html` or
-`.php` file — no wrapper, no stylesheet, no script — and it fills the viewport
-and raises no scrollbars. Three details earn their place:
+`.php` file — no wrapper, no stylesheet of your own, no script — and the
+flipbook reaches all four edges of the window with no scrollbars. Each part
+earns its place:
 
 - `display:block` — an iframe is inline by default and the line box beneath it
-  adds ~4px, which is enough on its own to start the page scrolling.
-- `calc(100dvh - 16px)` — the viewport less the 8px top and bottom margin every
-  browser puts on `<body>`. A plain `100dvh` frame is 16px taller than the room
-  it has and the host page scrolls. A site that resets its margins simply gets a
-  frame 16px short, which also raises no scrollbar.
+  adds ~4px, enough on its own to start the page scrolling.
+- `body:has(> .atlas-flipbook){margin:0}` — the white band above and below the
+  frame is the 8px margin every browser puts on `<body>`. It belongs to the host
+  page, not to the viewer (whose own `html` and `body` already carry none), so it
+  can only be answered from the host side. The rule is deliberately narrow: it
+  matches only where the frame is a **direct child of `<body>`**, the bare-embed
+  case. Nested inside a real page it never matches and the site's own spacing is
+  untouched.
 - `dvh`, with a `vh` line before it — the height follows a mobile browser's
   address bar sliding in and out; a browser that cannot parse dynamic viewport
-  units drops that declaration and keeps the `vh` fallback.
+  units drops that declaration and keeps the `vh` fallback. The
+  `calc(… - 16px)` height is the fallback for a browser without `:has()`: 8px
+  bands, but still no scrollbar.
 
 Set the public origin once, per deployment (see `.env.example`):
 
@@ -93,10 +104,17 @@ up. The document id is the registry slug already in use (`mba`,
 
 Pages turn like paper: a curved page curl in 3-D with its gradient shading and
 inner, outer and book shadows. That comes from page-flip's canvas renderer, so
-each sheet is drawn once to a page image (at screen resolution, not print
-resolution) and cached; resizing, zooming and turning all reuse it. The
-trade-off is that the text in the flipbook is artwork — the selectable,
-searchable text and the clickable links live in the downloadable PDF.
+each sheet is drawn once to a page image and cached; resizing, zooming and
+turning all reuse it. The trade-off is that the text in the flipbook is
+artwork — the selectable, searchable text and the clickable links live in the
+downloadable PDF.
+
+The page is drawn at the display's **real** resolution. Two things have to line
+up for that: the artwork carries `2 × devicePixelRatio` the sheet's own width
+(capped at 3), and page-flip's canvas — which otherwise sizes its backing store
+from the CSS box and ignores pixel ratio entirely, halving the resolution on
+every Retina screen and every phone — is given a backing store scaled to the
+device and a context scaled to match.
 
 Turn a page by clicking, dragging its corner, swiping, using the arrow keys or
 the toolbar buttons.
