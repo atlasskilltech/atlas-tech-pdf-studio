@@ -10,6 +10,12 @@
    typo, the doubled space in "Total One -  Time Fee") which are left
    untouched on purpose.
 
+   `school` and `level` place a document in the university's structure -
+   which school it belongs to and whether the programme is an
+   undergraduate, postgraduate or integrated one. The studio groups its
+   document list from those two fields; nothing about the sheet itself
+   depends on them.
+
    This file carries CONTENT only. Nothing here describes layout, size
    or position - that lives in the sheet components and in lib/sheet.js.
    Nothing here repeats the footer either: every document uses the one
@@ -75,10 +81,11 @@ export const FEE_STRUCTURES = [
   /* ------------------------------- B.Des (ISDI) ------------------------------- */
   {
     id: 'bdes',
-    file: 'B.Des-Fee-Structure-2027-28.pdf',
+    file: 'isdi-bdes-fee-structure-2027-28.pdf',
     school: 'isdi',
     cardName: 'ISDI Undergraduate Degree',
     cardScope: 'B.Des',
+    level: 'Undergraduate Degree',
     docTitle: 'Bachelor of Design (B.Des)',
     title: [{ main: 'Bachelor of Design', abbr: '(B.Des)' }],
     subtitle: 'Undergraduate Degree Program 2027-2031',
@@ -114,10 +121,11 @@ export const FEE_STRUCTURES = [
   /* ------------- ISDI Undergraduate Degree - B.Tech (ISDI lockup) ------------- */
   {
     id: 'isdi-btech',
-    file: 'ISDI-Undergraduate-Degree.pdf',
+    file: 'isdi-btech-fee-structure-2027-28.pdf',
     school: 'isdi',
     cardName: 'ISDI Undergraduate Degree',
     cardScope: 'B.Tech',
+    level: 'Undergraduate Degree',
     docTitle: 'Bachelor of Technology (B.Tech)',
     title: [{ main: 'Bachelor of Technology', abbr: '(B.Tech)' }],
     subtitle: 'Undergraduate Degree Program 2027-2031',
@@ -137,10 +145,11 @@ export const FEE_STRUCTURES = [
   /* ------------------------------- B.Tech (uGDX) ------------------------------- */
   {
     id: 'btech',
-    file: 'B.Tech-Fee-Structure-2027-28.pdf',
+    file: 'ugdx-btech-fee-structure-2027-28.pdf',
     school: 'ugdx',
     cardName: 'uGDX Undergraduate Degree',
     cardScope: 'B.Tech',
+    level: 'Undergraduate Degree',
     docTitle: 'Bachelor of Technology (B.Tech)',
     title: [{ main: 'Bachelor of Technology', abbr: '(B.Tech)' }],
     subtitle: 'Undergraduate Degree Program 2027-2031',
@@ -160,10 +169,11 @@ export const FEE_STRUCTURES = [
   /* ----------------------------- B.Sc Finance (ISME) ----------------------------- */
   {
     id: 'bsc-finance',
-    file: 'B.Sc-Finance-Fee-Structure-2027-28.pdf',
+    file: 'isme-bba-bsc-fee-structure-2027-28.pdf',
     school: 'isme',
     cardName: 'ISME Undergraduate Degree',
     cardScope: 'BBA / BBA (Hons.) & B.Sc / B.Sc (Hons.)',
+    level: 'Undergraduate Degree',
     docTitle: 'B.Sc Finance',
     title: [
       { main: 'Bachelor of Business Administration', abbr: '(BBA / BBA Hons.)' },
@@ -193,10 +203,11 @@ export const FEE_STRUCTURES = [
   /* --------------------------------- MBA (ISME) --------------------------------- */
   {
     id: 'mba',
-    file: 'MBA-Fee-Structure-2027-28.pdf',
+    file: 'isme-mba-fee-structure-2027-28.pdf',
     school: 'isme',
     cardName: 'ISME Postgraduate Degree',
     cardScope: 'MBA',
+    level: 'Postgraduate Degree',
     docTitle: 'Master of Business Administration (MBA)',
     title: [{ main: 'Master of Business Administration', abbr: '(MBA)' }],
     subtitle: 'Postgraduate Degree Program 2027-2029',
@@ -219,10 +230,11 @@ export const FEE_STRUCTURES = [
   /* ----------------------------- M.Des + MBA (ISDI) ----------------------------- */
   {
     id: 'mdes-mba',
-    file: 'M.Des-MBA-Fee-Structure-2027-28.pdf',
+    file: 'isdi-mdes-mba-fee-structure-2027-28.pdf',
     school: 'isdi',
     cardName: 'ISDI Postgraduate Degree',
     cardScope: 'M.Des & MBA',
+    level: 'Postgraduate Degree',
     docTitle:
       'Masters of Design (M.Des) & Master of Business Administration (MBA)',
     title: [
@@ -259,10 +271,11 @@ export const FEE_STRUCTURES = [
   /* ---------------------- BBA-LLB (Hons.) - School of Law ---------------------- */
   {
     id: 'bba-llb',
-    file: 'Law-Integrated-BBA-LLB-Fee-Structure-2027-28.pdf',
+    file: 'law-bba-llb-fee-structure-2027-28.pdf',
     school: 'law',
     cardName: 'BBA-LLB (Hons.)',
     cardScope: 'BBA-LLB (Hons.)',
+    level: 'Integrated Programs',
     docTitle: 'Five Years Integrated Program BBA-LLB (Hons.)',
     title: [
       { main: 'Five Years Integrated Program' },

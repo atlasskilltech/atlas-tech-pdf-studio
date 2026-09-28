@@ -5,17 +5,22 @@
    Wording, spelling, punctuation, numbering, table headings, categories
    and percentages are reproduced exactly from the approved source -
    including "15 days or more before the formally notified last date of
-   Admission" on rows 1-3 and the space inside "sdt. admissions@..." -
-   and are deliberately not normalised.
+   Admission" on rows 1-3 - and are deliberately not normalised.
 
-   The ONLY edits to the source text are the academic-year updates:
+   The edits to the source text are the academic-year updates:
      (2026-27)           -> (2027-28)
      INCOMING CLASS 2026 -> INCOMING CLASS 2027
      17th July 2026      -> 17th July 2027
      the 2026 admission-cycle dates in the table and in terms 2 and 8
                          -> 2027
-   The UGC references "Fee Refund Policy 2024-2025" and "12th June 2024"
-   are historical and are left untouched.
+   and, in term 3, three admissions addresses reassigned to the schools
+   that now answer them:
+     design.admissions@...     -> isdi@...
+     management.admissions@... -> isme@...
+     sdt. admissions@...       -> isme@...
+   The MBA and LAW addresses are unchanged. The UGC references "Fee
+   Refund Policy 2024-2025" and "12th June 2024" are historical and are
+   left untouched.
 
    This document carries ATLAS indigo and teal only. No school branding
    appears anywhere in it.
@@ -29,7 +34,7 @@ const UGC_URL =
 export const REFUND_POLICY = {
   id: 'refund-policy',
   kind: 'policy',
-  file: 'ATLAS-Fee-Refund-Policy-2027-28.pdf',
+  file: 'atlas-refund-policy-2027-28.pdf',
   cardName: 'Fee Refund Policy',
   cardScope: 'ATLAS SkillTech University',
   docTitle: 'Fee Refund Policy (2027-28)',
@@ -104,13 +109,13 @@ export const REFUND_POLICY = {
       list: [
         {
           label: 'Bachelor of Design (B. Des.): ',
-          email: 'design.admissions@atlasuniversity.edu.in',
-          mailto: 'design.admissions@atlasuniversity.edu.in',
+          email: 'isdi@atlasuniversity.edu.in',
+          mailto: 'isdi@atlasuniversity.edu.in',
         },
         {
           label: 'Bachelor of Business Administration (BBA): ',
-          email: 'management.admissions@atlasuniversity.edu.in',
-          mailto: 'management.admissions@atlasuniversity.edu.in',
+          email: 'isme@atlasuniversity.edu.in',
+          mailto: 'isme@atlasuniversity.edu.in',
         },
         {
           label: 'Master of Business Administration (MBA): ',
@@ -118,11 +123,9 @@ export const REFUND_POLICY = {
           mailto: 'pgadmissions@atlasuniversity.edu.in',
         },
         {
-          // The source prints a space inside this address. The printed
-          // text is left as it is and the link opens the valid address.
           label: 'Bachelor of Science (B.Sc. Hons) ',
-          email: 'sdt. admissions@atlasuniversity.edu.in',
-          mailto: 'sdt.admissions@atlasuniversity.edu.in',
+          email: 'isme@atlasuniversity.edu.in',
+          mailto: 'isme@atlasuniversity.edu.in',
         },
         {
           label: 'Bachelors of LAW (BBA LLB Hons) - ',

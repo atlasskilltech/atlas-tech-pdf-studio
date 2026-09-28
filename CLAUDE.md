@@ -86,6 +86,29 @@ and never add a shadow, glow, outline or filter. A lockup is always drawn at the
 band height with width free, which is what guarantees its true proportions, and
 the band is set to the colour the artwork is drawn in so there is no seam.
 
+## 7a. Document hierarchy — `src/lib/registry.js`
+
+The studio lists documents as **school → level → programme**. It is built from
+two fields on each document, `school` and `level`, not from a hand-written list,
+so a new document lands in the right place by declaring those two and nothing
+else. `GROUP_ORDER` and `LEVEL_ORDER` in the registry are declared on purpose —
+ATLAS first, then undergraduate before postgraduate — and are not alphabetical.
+
+A card names only the **programme**: the school and the level are the headings
+above it, and repeating them would say the same thing three times.
+
+## 7b. PDF filenames
+
+Named `<school>-<programme>-fee-structure-2027-28.pdf`, lower case and
+hyphenated (`atlas-refund-policy-2027-28.pdf` for the policy). The name is
+declared ONCE, as `file` in `src/content/`; the download, the ZIP entry, the
+header line and the print-route title all derive from it, so renaming a
+document means editing that one string. Embed URLs use the document **id**, not
+the filename, and are unaffected by a rename.
+
+Visible document titles (`docTitle`) are separate and must not change when a
+filename does.
+
 ## 7. School branding — `src/lib/brand.js`
 
 Schools are data. Adding one means adding an entry there plus its lockup — no

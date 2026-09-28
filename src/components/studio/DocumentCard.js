@@ -4,9 +4,13 @@
    A document in the list.
 
    One fixed card structure for every document: a colour swatch, the
-   name over the scope line, then the two actions. The text block always
-   reserves its space, so cards stay the same height and the buttons line
-   up however long the names run.
+   programme over its page count, then the two actions. The text block
+   always reserves its space, so cards stay the same height and the
+   buttons line up however long the names run.
+
+   The card names the PROGRAMME and nothing more - the school and the
+   level are already the headings it sits under, and repeating them here
+   would say the same thing three times.
    ===================================================================== */
 
 export default function DocumentCard({ entry, pages, selected, onView, onDownload, busy }) {
@@ -28,12 +32,11 @@ export default function DocumentCard({ entry, pages, selected, onView, onDownloa
         />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-5 text-[var(--atlas-indigo)] sm:text-base sm:leading-6">
-            {entry.name}
+            {entry.programme}
           </p>
-          <p className="text-xs leading-4 text-slate-500">
-            {entry.scope}
-            {pageLabel ? ` · ${pageLabel}` : null}
-          </p>
+          {pageLabel ? (
+            <p className="text-xs leading-4 text-slate-500">{pageLabel}</p>
+          ) : null}
         </div>
       </div>
 

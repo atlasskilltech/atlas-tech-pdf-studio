@@ -32,16 +32,47 @@ npm run lint
 
 ## The documents
 
-| Document | School | Sheets |
-|---|---|---|
-| ISDI Undergraduate Degree — B.Des | ISDI | 1 |
-| ISDI Undergraduate Degree — B.Tech | ISDI | 1 |
-| uGDX Undergraduate Degree — B.Tech | uGDX | 1 |
-| ISME Undergraduate Degree — BBA / B.Sc | ISME | 1 |
-| ISME Postgraduate Degree — MBA | ISME | 1 |
-| ISDI Postgraduate Degree — M.Des & MBA | ISDI | 1 |
-| BBA-LLB (Hons.) | School of Law | 1 |
-| Fee Refund Policy | ATLAS (no school branding) | 2 |
+The studio lists them the way the university describes them — school, then
+level, then programme:
+
+```
+ATLAS
+  Fee Refund Policy                                  2 sheets
+
+ISDI
+  Undergraduate Degree
+    B.Des                                            1 sheet
+    B.Tech                                           1 sheet
+  Postgraduate Degree
+    M.Des & MBA                                      1 sheet
+
+ISME
+  Undergraduate Degree
+    BBA / BBA (Hons.) & B.Sc / B.Sc (Hons.)          1 sheet
+  Postgraduate Degree
+    MBA                                              1 sheet
+
+uGDX
+  Undergraduate Degree
+    B.Tech                                           1 sheet
+
+LAW
+  Integrated Programs
+    BBA-LLB (Hons.)                                  1 sheet
+```
+
+Each document's PDF is named `<school>-<programme>-fee-structure-2027-28.pdf`
+(`atlas-refund-policy-2027-28.pdf` for the policy), so a folder of downloads
+sorts by school and reads the same way the list does. The filename is declared
+once, as `file` in `src/content/`, and the download, the ZIP entry, the header
+line and the print-route title all follow from it.
+
+The grouping is built in `src/lib/registry.js` from two fields on each
+document — `school` and `level` — so adding a document puts it in the right
+place on its own, and a school or level with nothing in it never appears. The
+order of schools and of levels is declared there, because neither is
+alphabetical: ATLAS comes first because it applies to everyone, and a degree
+reads undergraduate-first.
 
 ## Flipbook embed
 
