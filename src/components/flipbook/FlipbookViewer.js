@@ -78,6 +78,11 @@ export default function FlipbookViewer({ entry }) {
   const hostRef = useRef(null); // stable; React owns this one
   const flipRef = useRef(null);
   const builtForRef = useRef(null); // the measurement the book was built for
+  // Where the reader has got to. Kept apart from the flip instance
+  // because a rebuild tears that instance down - and on a zoom change
+  // React runs the effect cleanup, which destroys it, before the rebuild
+  // gets a chance to ask it anything.
+  const openAtRef = useRef(0);
 
   const [unit, setUnit] = useState(undefined);
   const [pages, setPages] = useState(null); // page artwork, once drawn
@@ -239,6 +244,9 @@ export default function FlipbookViewer({ entry }) {
           width: pageW,
           height: pageH,
           size: 'fixed',
+          // Reopen where the reader was, not at the beginning: a rebuild
+          // is a new book, and resizing should not cost them their place.
+          startPage: Math.min(Math.max(openAtRef.current, 0), pages.length - 1),
 
           // The turn itself: a soft page carrying its own shadow, at a
           // speed that reads as paper rather than as a transition.
@@ -293,10 +301,14 @@ export default function FlipbookViewer({ entry }) {
           /* a future page-flip may not expose this; the book still works */
         }
 
-        setPage(flip.getCurrentPageIndex());
+        openAtRef.current = flip.getCurrentPageIndex();
+        setPage(openAtRef.current);
         setSpread(spreadWanted ? 2 : 1);
 
-        flip.on('flip', (e) => setPage(e.data));
+        flip.on('flip', (e) => {
+          openAtRef.current = e.data;
+          setPage(e.data);
+        });
         flip.on('changeOrientation', (e) =>
           setSpread(e.data === 'portrait' ? 1 : 2),
         );
@@ -386,13 +398,32 @@ export default function FlipbookViewer({ entry }) {
   }, []);
 
   return (
+    /* ------------------------------------------------------------------
+       The viewer is exactly as tall as the room it is given and no
+       taller, so that embedded in an iframe it never makes the host page
+       scroll: the control bar takes its own height, the stage takes what
+       is left (`flex-1` over `min-h-0`, or a tall book would push the
+       bar out of view), and nothing overflows the whole.
+
+       `h-screen` is the 100vh fallback; the inline 100dvh overrides it
+       where dynamic viewport units exist, so the height follows a mobile
+       browser's address bar sliding in and out. A browser that cannot
+       parse dvh drops that declaration and keeps the class.
+       ------------------------------------------------------------------ */
     <div
       data-flipbook-root=""
-      className="flex h-[100dvh] w-full flex-col bg-slate-200"
+      style={{ height: '100dvh' }}
+      className="flex h-screen w-full flex-col overflow-hidden bg-slate-200"
     >
       <div
         ref={stageRef}
-        className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-1.5 sm:p-4"
+        /* At its natural size the book is measured to fit, so the stage
+           has nothing to scroll. Zoomed in it deliberately does, which is
+           how the reader pans around an enlarged page - inside the
+           viewer, never on the page hosting it. */
+        className={`relative flex min-h-0 flex-1 items-center justify-center p-1.5 sm:p-4 ${
+          zoom > 0 ? 'overflow-auto' : 'overflow-hidden'
+        }`}
       >
         <div ref={hostRef} className="shrink-0" />
         {pages ? null : (

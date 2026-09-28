@@ -52,13 +52,28 @@ the iframe to paste:
 ```html
 <iframe
   src="https://pdf.atlasuniversity.edu.in/flipbook/mba"
+  title="Master of Business Administration (MBA)"
   width="100%"
-  height="700"
-  style="border:0;"
+  style="display:block;width:100%;height:calc(100vh - 16px);height:calc(100dvh - 16px);border:0"
+  allow="fullscreen"
   allowfullscreen
   loading="lazy">
 </iframe>
 ```
+
+That snippet is self-contained: paste it into an otherwise empty `.html` or
+`.php` file — no wrapper, no stylesheet, no script — and it fills the viewport
+and raises no scrollbars. Three details earn their place:
+
+- `display:block` — an iframe is inline by default and the line box beneath it
+  adds ~4px, which is enough on its own to start the page scrolling.
+- `calc(100dvh - 16px)` — the viewport less the 8px top and bottom margin every
+  browser puts on `<body>`. A plain `100dvh` frame is 16px taller than the room
+  it has and the host page scrolls. A site that resets its margins simply gets a
+  frame 16px short, which also raises no scrollbar.
+- `dvh`, with a `vh` line before it — the height follows a mobile browser's
+  address bar sliding in and out; a browser that cannot parse dynamic viewport
+  units drops that declaration and keeps the `vh` fallback.
 
 Set the public origin once, per deployment (see `.env.example`):
 

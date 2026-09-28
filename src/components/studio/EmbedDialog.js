@@ -42,8 +42,8 @@ export default function EmbedDialog({ entry, onClose }) {
   const origin = SITE_URL || servedFrom;
 
   const code = useMemo(
-    () => embedCode(entry.id, { origin }),
-    [entry.id, origin],
+    () => embedCode(entry.id, { origin, title: entry.title }),
+    [entry.id, entry.title, origin],
   );
 
   const notPublic = !SITE_URL && isLocalOrigin(origin);

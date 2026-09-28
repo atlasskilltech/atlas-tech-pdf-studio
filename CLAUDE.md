@@ -154,6 +154,21 @@ do not introduce one. A document's id is its registry slug.
 
 - `src/lib/site.js` holds the ONE public-URL value (`NEXT_PUBLIC_SITE_URL`) and
   builds the embed snippet. Embed codes must never contain localhost.
+- The snippet must stand alone in an empty `.html`/`.php` file with no wrapper,
+  CSS or JS, and raise no scrollbars. It therefore carries `display:block` (an
+  inline iframe adds a ~4px line box) and `height:calc(100dvh - 16px)` (the
+  default 8px `<body>` margins, top and bottom), preceded by a `vh` line as the
+  fallback. Do not "simplify" it to a bare `100dvh` - measured, that scrolls the
+  host page by exactly 16px.
+- The viewer root is `h-screen` plus an inline `height:100dvh`, so an unparsed
+  dvh falls back to the class. The control bar takes its own height, the stage
+  takes the rest (`flex-1` over `min-h-0`), and the root is `overflow-hidden`.
+  The stage is `overflow-hidden` at natural size and `overflow-auto` only when
+  zoomed, so panning is possible when it is wanted and never otherwise.
+- A rebuild is a new book, so the current page is kept in a ref (`openAtRef`)
+  and replayed through `startPage`. It cannot be read off the flip instance at
+  rebuild time: on a zoom change React runs the effect cleanup, which destroys
+  that instance, before the rebuild runs.
 - The book is built with `loadFromImages`, **not** `loadFromHTML`. page-flip's
   HTML renderer transforms real DOM elements and can only draw a flat fold; the
   image renderer draws on a canvas and produces the real curved page curl with
