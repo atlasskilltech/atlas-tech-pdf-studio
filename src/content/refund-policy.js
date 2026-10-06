@@ -146,7 +146,6 @@ export const REFUND_POLICY = {
     {
       text: 'In the event that an offer of admission is withdrawn by the University given that the University is unable to provide the program, all such fees are fully refundable.',
     },
-    { text: 'The one - time enrolment is fully fee refundable until 17th August 2027.' },
   ],
 
   // The same shared footer as every fee structure, so the two can never
