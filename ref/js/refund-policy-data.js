@@ -88,7 +88,7 @@
     termsHeading: 'TERMS &amp; CONDITIONS',
     terms: [
       { text: 'Application Fee is Non-Refundable' },
-      { text: 'The one - time enrolment fee refundable until 17th August 2027.' },
+      { text: 'The one - time enrolment fee is refundable until 17th August 2027.' },
       { text: 'Fees shall be refunded to eligible students as per the table enclosed above, ' +
               'within fifteen days from the date of receiving a written application from them ' +
               'in this regard. Requests for refund should be made to the Office of Admission ' +
