@@ -58,15 +58,40 @@ export const BODY_TEXT = `${TEXT} text-[calc(3.3*var(--u))] leading-[1.62] track
 export const BODY_LEAD = 'font-medium text-[var(--ink)]';
 
 /* ---------------------------------------------------------------------
+   Admissions policy: a numbered question and its bulleted answer. The
+   question number is part of the verbatim heading text, so it is set
+   inline with the rest of the heading rather than generated.
+   --------------------------------------------------------------------- */
+export const QUESTION = `${DISPLAY} font-bold text-[calc(3.95*var(--u))] leading-[1.38] tracking-[-0.004em] text-[var(--atlas-indigo)]`;
+export const ANSWER_TEXT = `${TEXT} text-[calc(3.3*var(--u))] leading-[1.55] tracking-[0.002em] text-[var(--ink-soft)]`;
+export const ANSWER_EMPHASIS = 'font-semibold text-[var(--atlas-teal-deep)]';
+/* The small bold label that sits above a table ("National Boards"). */
+export const TABLE_LABEL = `${DISPLAY} font-bold text-[calc(3.5*var(--u))] leading-[1.3] tracking-[0.01em] text-[var(--ink)]`;
+/* The teal line that closes Q4 in the source. */
+export const ACCENT_NOTE = `${TEXT} italic text-[calc(3.3*var(--u))] leading-[1.45] tracking-[0.004em] text-[var(--atlas-teal-deep)]`;
+
+/* ---------------------------------------------------------------------
    Data table (policy documents)
    --------------------------------------------------------------------- */
 export const DATA_TH = `${DISPLAY} bg-[var(--atlas-indigo)] text-white text-left align-middle font-bold text-[calc(2.95*var(--u))] leading-[1.32] tracking-[0.035em] px-[calc(3*var(--u))] py-[calc(2.8*var(--u))]`;
 /* The cell base carries no font-family: each cell role below adds
    exactly one, so a cell can never be given two conflicting faces. */
 export const DATA_TD = 'align-middle px-[calc(3*var(--u))] py-[calc(3*var(--u))] border-t-[length:var(--hair)] border-t-[var(--line)]';
+/* The same cell, top-aligned - for a tall matrix cell (a list beside a
+   short cell), so its content starts at the top rather than floating in
+   the middle. A separate class, never layered over DATA_TD, so the two
+   vertical-align utilities can never collide. */
+export const DATA_TD_TOP = 'align-top px-[calc(3*var(--u))] py-[calc(3*var(--u))] border-t-[length:var(--hair)] border-t-[var(--line)]';
 export const DATA_TD_TEXT = `${TEXT} text-[calc(3.05*var(--u))] leading-[1.45] text-[var(--ink-soft)]`;
 export const DATA_TD_INDEX = `${DISPLAY} text-center font-bold text-[calc(3.4*var(--u))] leading-[1.45] text-[var(--atlas-indigo)]`;
 export const DATA_TD_VALUE = `${DISPLAY} ${TABULAR} text-right font-bold text-[calc(4*var(--u))] leading-[1.45] text-[var(--atlas-teal-deep)]`;
+
+/* A row-header cell - the "Specialisation" column of the admissions
+   matrix tables: the display face, bold, in ATLAS indigo. And the
+   generated number that opens an item in a list cell (same role as a
+   term number, so the two read alike). */
+export const DATA_TD_HEAD = `${DISPLAY} font-bold text-[calc(3.5*var(--u))] leading-[1.35] tracking-[0.005em] text-[var(--atlas-indigo)]`;
+export const DATA_LIST_NUMBER = `${DISPLAY} ${TABULAR} flex-none w-[calc(5.2*var(--u))] min-w-[calc(5.2*var(--u))] font-semibold text-[calc(3.05*var(--u))] leading-[1.45] text-[var(--atlas-teal-deep)]`;
 
 /* ---------------------------------------------------------------------
    Footer. Sized from --fu, which never changes, so the band matches on

@@ -20,10 +20,26 @@
    The rule closing the band is ATLAS indigo. A document whose band is
    itself indigo - one with no school branding - takes teal instead, so
    the band is always closed by a visible line of the same weight.
+
+   `fit` is how the lockup meets the band. The default, 'height', is the
+   rule above: flush in the corner at full band height, width free. A wide
+   horizontal lockup that is drawn for a light background cannot follow it -
+   at full band height it would run past the page edge - so such a document
+   passes fit='contain': the artwork is set to the content-column width and
+   centred in the band, left-aligned to the body margin, so its own clear
+   space is kept. It is still never stretched, cropped, recoloured or given
+   any shadow. No other document's header changes.
    ===================================================================== */
 import { ATLAS } from '@/lib/brand';
 
-export default function SheetHeader({ logo, href, band, rule = ATLAS.indigo }) {
+export default function SheetHeader({
+  logo,
+  href,
+  band,
+  rule = ATLAS.indigo,
+  fit = 'height',
+}) {
+  const contain = fit === 'contain';
   return (
     <>
       <div
@@ -34,13 +50,21 @@ export default function SheetHeader({ logo, href, band, rule = ATLAS.indigo }) {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute left-0 top-0 block h-[var(--ph-h)] border-0 no-underline outline-none"
+          className={
+            contain
+              ? 'absolute left-[var(--m)] top-0 flex h-[var(--ph-h)] items-center border-0 no-underline outline-none'
+              : 'absolute left-0 top-0 block h-[var(--ph-h)] border-0 no-underline outline-none'
+          }
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logo.src}
             alt={logo.alt}
-            className="block h-full w-auto max-w-none"
+            className={
+              contain
+                ? 'block h-auto w-[calc(210mm_-_2*var(--m))] max-w-[calc(210mm_-_2*var(--m))]'
+                : 'block h-full w-auto max-w-none'
+            }
           />
         </a>
       </div>

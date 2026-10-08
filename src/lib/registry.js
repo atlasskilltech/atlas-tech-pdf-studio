@@ -9,13 +9,15 @@
    ===================================================================== */
 import { FEE_STRUCTURES } from '@/content/fee-structures';
 import { REFUND_POLICY } from '@/content/refund-policy';
+import { ADMISSIONS_POLICY } from '@/content/admissions-policy';
 import { ATLAS, SCHOOLS } from '@/lib/brand';
-import { POLICY_SCALE, SCALE } from '@/lib/sheet';
+import { ADMISSIONS_SCALE, POLICY_SCALE, SCALE } from '@/lib/sheet';
 
 /** The scale sets, and the design scale each one aims for. */
 export const SCALE_SETS = {
   'fee-structures': SCALE,
   'refund-policy': POLICY_SCALE,
+  'admissions-policy': ADMISSIONS_SCALE,
 };
 
 export const DOCUMENTS = [
@@ -50,6 +52,22 @@ export const DOCUMENTS = [
     level: null,
     programme: REFUND_POLICY.cardName,
     doc: REFUND_POLICY,
+  },
+  {
+    id: ADMISSIONS_POLICY.id,
+    kind: ADMISSIONS_POLICY.kind,
+    file: ADMISSIONS_POLICY.file,
+    name: ADMISSIONS_POLICY.cardName,
+    scope: ADMISSIONS_POLICY.cardScope,
+    title: ADMISSIONS_POLICY.docTitle,
+    accent: ATLAS.indigo,
+    school: null,
+    // Another university-wide policy, listed under ATLAS beside the
+    // Fee Refund Policy.
+    group: 'atlas',
+    level: null,
+    programme: ADMISSIONS_POLICY.cardName,
+    doc: ADMISSIONS_POLICY,
   },
 ];
 

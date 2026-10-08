@@ -53,6 +53,14 @@ export const SCALE = { design: 1.0, min: 0.86 };
 export const POLICY_SCALE = { design: 1.16, min: 0.86 };
 
 /**
+ * The Admissions Policy is dense - a full page of questions and three
+ * requirement tables, the tallest with a long numbered list - so it aims
+ * for the base scale and is allowed to reduce further if its longest
+ * sheet needs it. Every sheet in the set still reduces together.
+ */
+export const ADMISSIONS_SCALE = { design: 1.0, min: 0.74 };
+
+/**
  * The custom properties that define a sheet. Spread onto the sheet
  * element together with a brand theme.
  */

@@ -139,6 +139,21 @@ export const ATLAS_LOCKUP = {
   url: 'https://atlasuniversity.edu.in/',
 };
 
+/**
+ * The official four-school horizontal lockup from the brand kit: the ATLAS
+ * SkillTech wordmark followed by the ISDI, ISME, uGDX and Law marks in one
+ * row. The artwork is drawn for a LIGHT background - the wordmark is indigo,
+ * not reversed - so the header band behind it is white, never indigo, and it
+ * is laid out to width (not full band height) so its own clear space is kept.
+ * Nothing is redrawn, recoloured or cropped.
+ */
+export const ATLAS_FOUR_SCHOOLS_LOCKUP = {
+  src: '/brand/logos/atlas-4-schools-horizontal-light.png',
+  ratio: 1097 / 133,
+  alt: 'ATLAS SkillTech University | ISDI · ISME · uGDX · School of Law',
+  url: 'https://atlasuniversity.edu.in/',
+};
+
 /* ---------------------------------------------------------------------
    Brand theme for a sheet.
 

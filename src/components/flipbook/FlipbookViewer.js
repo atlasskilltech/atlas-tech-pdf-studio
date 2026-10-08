@@ -751,5 +751,7 @@ export default function FlipbookViewer({ entry }) {
 }
 
 function scaleSetOf(entry) {
-  return entry.kind === 'policy' ? 'refund-policy' : 'fee-structures';
+  if (entry.kind === 'policy') return 'refund-policy';
+  if (entry.kind === 'admissions-policy') return 'admissions-policy';
+  return 'fee-structures';
 }

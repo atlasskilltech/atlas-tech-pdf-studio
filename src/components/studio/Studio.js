@@ -324,17 +324,20 @@ function readHash() {
 }
 
 function scaleSetOf(entry) {
-  return entry.kind === 'policy' ? 'refund-policy' : 'fee-structures';
+  if (entry.kind === 'policy') return 'refund-policy';
+  if (entry.kind === 'admissions-policy') return 'admissions-policy';
+  return 'fee-structures';
 }
 
 function metaFor(entry) {
-  return entry.kind === 'policy'
-    ? {
-        title: `${entry.title} — ATLAS SkillTech University`,
-        subject: 'Fee Refund Policy, Academic Year 2027-28 (Intake 27)',
-      }
-    : {
-        title: `${entry.title} — Fee Structure 2027-28`,
-        subject: 'Fee Structure, Academic Year 2027-28 (Intake 27)',
-      };
+  if (entry.kind === 'fee-structure') {
+    return {
+      title: `${entry.title} — Fee Structure 2027-28`,
+      subject: 'Fee Structure, Academic Year 2027-28 (Intake 27)',
+    };
+  }
+  return {
+    title: `${entry.title} — ATLAS SkillTech University`,
+    subject: `${entry.name}, Academic Year 2027-28 (Intake 27)`,
+  };
 }
