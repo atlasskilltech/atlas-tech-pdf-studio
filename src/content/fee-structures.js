@@ -135,7 +135,7 @@ export const FEE_STRUCTURES = [
         head: 'TOTAL ONE-TIME FEE PAYABLE AT THE TIME OF ENROLMENT',
         rows: [{ label: 'Registration & Admissions Fee', amount: '50,000' }],
       },
-      { head: 'ANNUAL TUITION FEE', rows: [{ label: 'YEAR I', amount: '5,11,600' }] },
+      { head: 'ANNUAL TUITION FEE', rows: [{ label: 'YEAR I', amount: '7,35,000' }] },
     ],
     notes: [NOTE_ANNUAL_INCREASE],
     termsHeading: TERMS_HEADING,
