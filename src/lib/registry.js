@@ -10,6 +10,7 @@
 import { FEE_STRUCTURES } from '@/content/fee-structures';
 import { REFUND_POLICY } from '@/content/refund-policy';
 import { ADMISSIONS_POLICY } from '@/content/admissions-policy';
+import { ISME_CHALLENGE } from '@/content/isme-challenge';
 import { ATLAS, SCHOOLS } from '@/lib/brand';
 import { ADMISSIONS_SCALE, POLICY_SCALE, SCALE } from '@/lib/sheet';
 
@@ -69,6 +70,24 @@ export const DOCUMENTS = [
     programme: ADMISSIONS_POLICY.cardName,
     doc: ADMISSIONS_POLICY,
   },
+  ...ISME_CHALLENGE.map((doc) => ({
+    id: doc.id,
+    kind: doc.kind,
+    file: doc.file,
+    name: doc.cardName,
+    scope: doc.cardScope,
+    title: doc.docTitle,
+    accent: SCHOOLS.isme.color,
+    school: 'isme',
+    // The challenge packs are their own section, after LAW, with no
+    // level heading: the instructions, then the four stages in order.
+    group: 'isme-challenge',
+    level: null,
+    programme: doc.cardName,
+    // The supplied PDF, which "Download PDF" saves as it is.
+    source: doc.source,
+    doc,
+  })),
 ];
 
 export const DOCUMENT_IDS = DOCUMENTS.map((d) => d.id);
@@ -95,6 +114,7 @@ const GROUP_ORDER = [
   { key: 'isme', label: 'ISME', accent: SCHOOLS.isme.color },
   { key: 'ugdx', label: 'uGDX', accent: SCHOOLS.ugdx.color },
   { key: 'law', label: 'LAW', accent: SCHOOLS.law.color },
+  { key: 'isme-challenge', label: 'ISME Challenge', accent: SCHOOLS.isme.color },
 ];
 
 const LEVEL_ORDER = [

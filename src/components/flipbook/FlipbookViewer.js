@@ -125,7 +125,9 @@ export default function FlipbookViewer({ entry }) {
     whenRenderable(source).then(() => {
       if (cancelled || !source) return;
       const units = fitAll(source, SCALE_SETS);
-      setUnit(units[scaleSetOf(entry)]);
+      // A document of supplied artwork has no set to fit; `null` still
+      // marks the sheets as ready to draw (`undefined` means "not yet").
+      setUnit(units[scaleSetOf(entry)] ?? null);
     });
 
     return () => {

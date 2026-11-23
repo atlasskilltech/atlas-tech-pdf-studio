@@ -119,6 +119,17 @@ export default function Studio() {
   const downloadOne = useCallback(
     (entry) =>
       guard(async () => {
+        // A document supplied as a finished PDF is saved exactly as
+        // supplied, never re-rendered.
+        if (entry.source) {
+          setMessage({ text: `Preparing ${entry.file}…` });
+          const response = await fetch(entry.source);
+          if (!response.ok) throw new Error(`${entry.file} could not be loaded.`);
+          saveBlob(await response.blob(), entry.file);
+          setMessage({ text: `Downloaded ${entry.file}`, ttl: 3000 });
+          return;
+        }
+
         const group = storeGroup(entry.id);
         if (!group) throw new Error('That document is not ready yet.');
 

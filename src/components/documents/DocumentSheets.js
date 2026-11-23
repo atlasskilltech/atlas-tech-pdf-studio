@@ -10,11 +10,13 @@
 import feeStructureSheets from './FeeStructureDocument';
 import refundPolicySheets from './RefundPolicyDocument';
 import admissionsPolicySheets from './AdmissionsPolicyDocument';
+import ismeChallengeSheets from './IsmeChallengeDocument';
 
 const RENDERERS = {
   'fee-structure': feeStructureSheets,
   policy: refundPolicySheets,
   'admissions-policy': admissionsPolicySheets,
+  'isme-challenge': ismeChallengeSheets,
 };
 
 /** The sheets of one document, as an array of elements. */
